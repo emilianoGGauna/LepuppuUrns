@@ -54,7 +54,11 @@ class UserManager():
         # Verificar que todos los campos obligatorios estén presentes
         if not all(field in user_data for field in required_fields):
             return {"error": "Faltan campos obligatorios"}
-        
+
+        # Verificar si el correo ya está registrado
+        if self.users_col.find_one({"email": user_data["email"]}):
+            return {"error": "Este correo ya ha sido registrado"}
+            
         # Validar acceso
         if user_data["access"] not in ["cliente", "admin"]:
             return {"error": "Tipo de acceso inválido. Debe ser 'cliente' o 'admin'"}
