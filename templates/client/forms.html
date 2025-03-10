@@ -7,15 +7,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+
+        /* Ajustar margen superior para evitar que el contenido quede oculto debajo del navbar */
         body {
             background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-family: Arial, sans-serif;
+            margin-top: 70px; /* Ajuste estático para evitar superposición */
         }
 
+        /* 📦 Contenedor principal */
         .container {
-            margin-top: 50px;
+            margin-top: 80px;
             background-color: white;
             padding: 20px;
             border-radius: 10px;
@@ -26,51 +31,47 @@
             gap: 20px;
         }
 
+        /* 📸 Contenedor de la imagen */
         .image-container {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        .product-image {
-            max-width: 100%;
-            border-radius: 10px;
-        }
-
-        .forms-container {
-            flex: 2;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-data {
-            color: #6c757d;
-            font-style: italic;
-        }
-        .image-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
+            width: 100%;
         }
 
         .product-image {
-            max-width: 100%;
+            width: 100%;
+            max-width: 500px; /* Tamaño máximo */
             height: auto;
+            border-radius: 10px;
+            object-fit: cover;
+            transition: transform 0.3s ease-in-out;
         }
 
+        /* 🔍 Efecto zoom al pasar el mouse */
+        .product-image:hover {
+            transform: scale(1.05);
+        }
+
+        /* 🔄 Botones de navegación de imágenes */
         .image-nav-btn {
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             border: none;
-            padding: 10px;
+            padding: 12px;
             cursor: pointer;
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
+            border-radius: 50%;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .image-nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.8);
         }
 
         #prev {
@@ -80,6 +81,48 @@
         #next {
             right: 10px;
         }
+
+        /* 📋 Formulario */
+        .forms-container {
+            flex: 2;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        /* 📱 Estilos específicos para móviles */
+        @media screen and (max-width: 768px) {
+            body {
+                margin-top: 80px; /* Mayor margen para móviles */
+            }
+            .container {
+                flex-direction: column; /* Imagen arriba, formulario abajo */
+                width: 95%;
+                margin-top: 20px;
+            }
+
+            .image-container {
+                order: -1; /* Colocar la imagen arriba */
+                margin-bottom: 20px;
+            }
+
+            .product-image {
+                width: 100%;
+                max-height: 400px;
+            }
+
+            .forms-container {
+                padding: 15px;
+            }
+
+            .image-nav-btn {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+
 
     </style>
 </head>
