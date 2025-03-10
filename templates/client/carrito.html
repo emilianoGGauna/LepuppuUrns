@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Carrito</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .catalog-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            position: relative;
+        }
+
+        .product-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .details-container {
+            text-align: left;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .toggle-details {
+            display: block;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        .toggle-details:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .remove-button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: #dc3545;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .remove-button:hover {
+            background: #c82333;
+        }
+
+        .finalizar-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 400px;
+            padding: 12px;
+            background: #28a745;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .finalizar-button:hover {
+            background: #218838;
+        }
+
+        .popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    {% include 'client/client_navbar.html' %}
+
+    <div class="container">
+        <h2>Mi Carrito</h2>
+
+        {% if cart_items %}
+            <div class="catalog-container">
+                {% for item in cart_items %}
+                    <div class="product-card" id="cart-row-{{ item._id }}">
+                        {% if item.img_2 %}
+                            <img src="{{ item.img_2 }}" class="product-img" alt="{{ item.model }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/250" class="product-img" alt="Imagen no disponible">
+                        {% endif %}
+                        <h5>{{ item.model }}</h5>
+
+                        <button class="toggle-details" onclick="toggleDetails('{{ item._id }}')">Ver detalles ▼</button>
+
+                        <div class="details-container" id="details-{{ item._id }}">
+                            <h6>Detalles del Pedido:</h6>
+                            <ul>
+                                {% for key, value in item.forms_lleno.items() %}
+                                    {% if key != "product_id" %}
+                                        <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <button class="remove-button" onclick="removeFromCart('{{ item._id }}')">Eliminar</button>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Finalizar Compra -->
+            <button class="finalizar-button" onclick="finalizarCompra()">Finalizar Compra</button>
+
+        {% else %}
+            <p class="text-muted">Tu carrito está vacío.</p>
+        {% endif %}
+    </div>
+
+    <!-- Pop-up Notification -->
+    <div id="cart-popup" class="popup"></div>
+
+    <script>
+        function toggleDetails(cartItemId) {
+            let detailsDiv = document.getElementById("details-" + cartItemId);
+            let toggleButton = document.querySelector("#cart-row-" + cartItemId + " .toggle-details");
+
+            if (detailsDiv.style.display === "none" || detailsDiv.style.display === "") {
+                detailsDiv.style.display = "block";
+                toggleButton.innerHTML = "Ocultar detalles ▲";
+            } else {
+                detailsDiv.style.display = "none";
+                toggleButton.innerHTML = "Ver detalles ▼";
+            }
+        }
+
+        function removeFromCart(cartItemId) {
+            fetch(`/remove_from_cart/${cartItemId}`, {
+                method: 'POST'
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("cart-row-" + cartItemId).remove();
+                    $("#cart-popup").text(data.message).fadeIn().delay(2000).fadeOut();
+
+                    if ($(".product-card").length === 0) {
+                        $(".container").html("<p class='text-muted'>Tu carrito está vacío.</p>");
+                    }
+                } else {
+                    alert("Error: " + data.error);
+                }
+            });
+        }
+
+        function finalizarCompra() {
+            fetch("/finalizar_compra", {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Redirecting to:", data.whatsapp_link); // Debugging
+                    window.location.href = data.whatsapp_link;  // Ensures WhatsApp opens with the message
+                } else {
+                    alert("Error: " + data.error);
+                }
+            })
+            .catch(error => {
+                alert("Error al procesar la compra.");
+            });
+        }
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

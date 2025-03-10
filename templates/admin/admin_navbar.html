@@ -1,0 +1,78 @@
+<nav class="navbar navbar-dark bg-dark fixed-top">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <!-- Left Side: Brand/Logo -->
+        <a class="navbar-brand text-white fw-bold ms-3 d-flex align-items-center" href="{{ url_for('catalog') }}">
+            🕊️ <span class="ms-1">Lepuppy Urns</span>
+        </a>
+        
+        <!-- Right Side: Navigation Buttons -->
+        <div class="d-flex align-items-center">
+            <a class="btn btn-outline-light text-white fw-bold mx-2 nav-link d-flex align-items-center" href="{{ url_for('admin_catalog') }}">
+                🛍️ <span class="ms-1">Catálogo</span>
+            </a>
+            <a class="btn btn-outline-secondary text-white fw-bold mx-2 nav-link d-flex align-items-center" href="{{ url_for('admin_usuarios') }}">
+                👤 <span class="ms-1">Usuarios</span>
+            </a>
+            <a class="btn btn-outline-secondary text-white fw-bold mx-2 nav-link d-flex align-items-center" href="{{ url_for('admin_dashboard') }}">
+                📊 <span class="ms-1">Dashboard</span>
+            </a>
+            <a class="btn btn-outline-secondary text-white fw-bold mx-2 nav-link d-flex align-items-center" href="{{ url_for('admin_pedidos') }}">
+                📦 <span class="ms-1">Pedidos</span>
+            </a>
+            <a class="btn btn-outline-danger text-white fw-bold mx-2 nav-link d-flex align-items-center" href="{{ url_for('logout') }}">
+                <span class="ms-1">Salir</span>
+            </a>
+
+            <!-- Spinner (Hidden by Default) -->
+            <div id="nav-spinner" class="spinner-border text-light ms-3" role="status" style="display: none; width: 1.5rem; height: 1.5rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    /* Ensure buttons match the original style */
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    /* Improve button text spacing */
+    .nav-link span {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    /* Make spinner align properly */
+    #nav-spinner {
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const spinner = document.getElementById("nav-spinner");
+
+        // Show spinner when a navigation link is clicked
+        document.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", function () {
+                spinner.style.display = "inline-block"; // Show spinner
+            });
+        });
+
+        // Hide spinner once the page has fully loaded
+        window.addEventListener("load", function () {
+            spinner.style.display = "none"; // Hide spinner after loading
+        });
+    });
+</script>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Producto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+
+        .image-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .product-image {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        .forms-container {
+            flex: 2;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-data {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .image-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .product-image {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .image-nav-btn {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #prev {
+            left: 10px;
+        }
+
+        #next {
+            right: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    {% include 'client/client_navbar.html' %}
+    <div class="container">
+        <div class="image-container">
+            <button id="prev" class="image-nav-btn">&#10094;</button>
+            
+            <img id="product-image" class="product-image" src="{{ product.images[0] }}" alt="Imagen del Producto">
+        
+            <button id="next" class="image-nav-btn">&#10095;</button>
+        </div>
+        
+        <div class="forms-container">
+            <p><strong>Modelo:</strong> <strong>{{ product.model }}</strong></p>
+            <form id="add-to-cart-form">
+                <input type="hidden" name="product_id" value="{{ product.product_id }}">
+                <div class="mb-3">
+                    <label for="Cantidad"><strong>Cantidad</strong></label>
+                    <input type="number" id="Cantidad" name="Cantidad" class="form-control" min="1" value="1" required>
+                </div>
+                {% for key, value in product.forms.items() %}
+                    {% if value is string and key != "Mensaje" %}
+                        <div class="mb-3">
+                            <label><strong>{{ key }}</strong></label>
+                            <input type="text" name="{{ key }}" class="form-control" value="{{ value }}" readonly>
+                        </div>
+                    {% elif value is iterable and value is not mapping and key != "Mensaje" %}
+                        <div class="mb-3">
+                            <label for="{{ key }}"><strong>{{ key }}</strong></label>
+                            <select id="{{ key }}" name="{{ key }}" class="form-select" required>
+                                <option value="{{ value[0] }}" selected>{{ value[0] }}</option>  <!-- Valor por defecto -->
+                                {% for option in value %}
+                                    <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% elif value is mapping %}
+                        <div class="mb-3">
+                            <label for="{{ key }}"><strong>{{ key }}</strong></label>
+                            <select id="{{ key }}" name="{{ key }}" class="form-select" required onchange="updateDependentOptions('{{ key }}', this.value)">
+                                <option value="">Seleccione una opción</option>
+                                {% for sub_key in value.keys() %}
+                                    <option value="{{ sub_key }}">{{ sub_key }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="{{ key }}-options" class="mb-3"></div>
+                    {% endif %}
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Añadir al carrito</button>
+            </form>
+            
+            {% if "Mensaje" in product.forms %}
+            <div class="mt-3">
+                <p>{{ product.forms["Mensaje"] }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const images = {{ product.images | tojson }};
+            let currentIndex = 0;
+            const imageElement = document.getElementById("product-image");
+            const prevButton = document.getElementById("prev");
+            const nextButton = document.getElementById("next");
+
+            function updateImage() {
+                imageElement.src = images[currentIndex];
+            }
+
+            prevButton.addEventListener("click", function () {
+                currentIndex = (currentIndex - 1 + images.length) % images.length;
+                updateImage();
+            });
+
+            nextButton.addEventListener("click", function () {
+                currentIndex = (currentIndex + 1) % images.length;
+                updateImage();
+            });
+        });
+
+        $(document).ready(function() {
+            $("#add-to-cart-form").submit(function(event) {
+                event.preventDefault();  // Prevenir el envío por defecto
+
+                let formData = new FormData(this);
+                let orderedData = {};
+
+                // Mantener el orden de los campos del formulario
+                $(this).find("input, select").each(function() {
+                    orderedData[$(this).attr("name")] = $(this).val();
+                });
+
+                $.ajax({
+                    url: "{{ url_for('add_to_cart') }}",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(orderedData),  // Enviar como JSON para conservar el orden
+                    success: function(response) {
+                        if (response.success) {
+                            alert("Producto agregado al carrito correctamente.\n\Productos en el carrito:\n" + JSON.stringify(response.cart_count, null, 2));
+                        } else {
+                            alert("Error: " + response.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error en la solicitud: " + error);
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <script>
+        function updateDependentOptions(parentKey, selectedValue) {
+            const optionsContainer = document.getElementById(`${parentKey}-options`);
+            optionsContainer.innerHTML = "";
+            
+            const subOptions = {{ product.forms | tojson }}[parentKey][selectedValue];
+            
+            if (subOptions && typeof subOptions === 'object' && !Array.isArray(subOptions)) {
+                Object.keys(subOptions).forEach(subKey => {
+                    let selectElement = `<label for="${subKey}"><strong>${subKey}</strong></label>`;
+                    selectElement += `<select id="${subKey}" name="${subKey}" class="form-select" required>`;
+                    selectElement += `<option value="">Seleccione una opción</option>`;
+                    subOptions[subKey].forEach(option => {
+                        selectElement += `<option value="${option}">${option}</option>`;
+                    });
+                    selectElement += `</select>`;
+                    optionsContainer.innerHTML += selectElement;
+                });
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

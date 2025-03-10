@@ -1,0 +1,12 @@
+Flask
+gunicorn
+python-dotenv
+pymongo
+pandas
+openpyxl
+plotly
+bcrypt
+sendgrid
+jsonify
+matplotlib
+xlsxwriter

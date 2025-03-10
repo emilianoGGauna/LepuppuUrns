@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Corte Láser del Producto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+        }
+
+        .editor-container {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .btn-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-message {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="text-center">Editor de Corte Láser del Producto</h2>
+        <div id="editor" class="editor-container"></div>
+
+        <div class="btn-container">
+            <button class="btn btn-success" onclick="guardarCambios()">Guardar Cambios</button>
+            <button class="btn btn-secondary" onclick="restaurarJSON()">Restaurar Original</button>
+        </div>
+
+        <p id="status-success" class="status-message text-success">✅ Guardado exitosamente.</p>
+        <p id="status-error" class="status-message text-danger">❌ Error al guardar. Inténtalo de nuevo.</p>
+    </div>
+
+    <script>
+        // Convert JSON object to ordered array to ensure key order is preserved
+        function objectToOrderedArray(obj) {
+            return Object.entries(obj);
+        }
+
+        // Convert ordered array back to object
+        function orderedArrayToObject(arr) {
+            let obj = {};
+            arr.forEach(([key, value]) => {
+                obj[key] = value;
+            });
+            return obj;
+        }
+
+        // Load JSON from Jinja2 while maintaining order
+        let originalJsonArray = {{ product.corte_lazer.items() | list | tojson | safe }};
+        let originalJson = orderedArrayToObject(originalJsonArray);
+
+        // Initialize ACE Editor
+        let editor = ace.edit("editor");
+        editor.setTheme("ace/theme/github");
+        editor.session.setMode("ace/mode/json");
+        editor.setValue(JSON.stringify(originalJson, null, 4), -1);
+
+        function guardarCambios() {
+            let updatedJson;
+            try {
+                updatedJson = JSON.parse(editor.getValue());
+
+                // Ensure new_corte_lazer_data is a dictionary, not a list
+                if (!updatedJson || typeof updatedJson !== "object" || Array.isArray(updatedJson)) {
+                    alert("Error: El corte láser debe ser un diccionario válido.");
+                    return;
+                }
+
+                // If it's a list of key-value pairs, convert it to an object
+                if (Array.isArray(updatedJson)) {
+                    let convertedObject = {};
+                    updatedJson.forEach(pair => {
+                        if (Array.isArray(pair) && pair.length === 2) {
+                            convertedObject[pair[0]] = pair[1]; // Convert list pairs to object
+                        }
+                    });
+                    updatedJson = convertedObject;
+                }
+
+            } catch (e) {
+                alert("Error: JSON inválido. Corrige el formato antes de guardar.");
+                return;
+            }
+
+            $.ajax({
+                url: "/set_corte_lazer",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    product_id: "{{ product.product_id }}",  // Ensure product_id is passed correctly
+                    new_corte_lazer_data: updatedJson
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        alert("✅ Corte láser actualizado correctamente.");
+                    } else {
+                        alert("❌ Error al actualizar: " + response.error);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert("❌ Error en la solicitud: " + xhr.responseText);
+                }
+            });
+        }
+
+        function restaurarJSON() {
+            editor.setValue(JSON.stringify(originalJson, null, 4), -1);
+            showMessage("info", "🔄 Restaurado a la versión original.");
+        }
+
+        function showMessage(type, message) {
+            $(".status-message").hide();
+            let target;
+            if (type === "success") {
+                target = "#status-success";
+            } else if (type === "error") {
+                target = "#status-error";
+            } else {
+                target = "#status-success"; // For loading or info messages
+            }
+            $(target).text(message).fadeIn();
+            setTimeout(() => $(target).fadeOut(), 3000);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
